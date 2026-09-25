@@ -420,6 +420,11 @@ Tip: Tik op vraag om antwoord te openen. © 2026 MF Gregoire en zoon — Pentagr
 <div class="sleep-overlay" id="remOverlay"><div class="sleep-circle" style="border-color:rgba(167,139,250,0.42)"><div style="font-size:36px">👁️</div></div><h2 style="margin-top:12px;font-size:16px">REM — je droomt nu</h2><div style="font-size:11px;margin-top:8px" id="remOverlayInfo"></div><button id="remOkBtn" style="margin-top:10px;padding:6px 14px;border-radius:12px;background:rgba(167,139,250,0.22);border:1px solid rgba(167,139,250,0.32);color:#fff;cursor:pointer;font-size:10px">Ok, ik weet het</button></div>
 
 <script>
+// === EARLY DECLARATIONS (fix TDZ issues) ===
+var currentLang = localStorage.getItem('binaural_lang') || 'nl';
+var $ = function(s){ return document.getElementById(s); };
+// === END EARLY DECLARATIONS ===
+
 const planetData={1:{name:'Zon',emoji:'☀️',freq:40,base:300,nature:'storm',desc:'Goud, leiderschap, zichtbaar worden. Jouw Matty 73→1 en abjad 3268→1',kleur:'Goud'},2:{name:'Maan',emoji:'🌙',freq:6,base:200,nature:'ocean',desc:'Intuïtie, visioenen, dromen, onderbewustzijn. REM en Theta 6Hz',kleur:'Zilver'},3:{name:'Jupiter',emoji:'♃',freq:10,base:240,nature:'rain',desc:'Rijkdom, expansie, geluk. Geld & goud optie 8Hz werkt met Jupiter',kleur:'Paars'},4:{name:'Uranus',emoji:'♅',freq:7.5,base:190,nature:'forest',desc:'Doorbraak, vernieuwing, plotse inzichten'},5:{name:'Mercurius',emoji:'☿️',freq:7.5,base:200,nature:'forest',desc:'Communicatie, flow, ideeën snel laten stromen'},6:{name:'Venus',emoji:'♀️',freq:10,base:220,nature:'ocean',desc:'Liefde, waarde, wat je aantrekt. Rust 10Hz'},7:{name:'Saturnus',emoji:'♄',freq:7.5,base:200,nature:'night',desc:'Zoeker, mystiek, diepe lessen. Jouw Matje 70→7, mystiek getal'},8:{name:'Saturnus-Jupiter mix',emoji:'♄♃',freq:8,base:240,nature:'ocean',desc:'Geld, karma, manifestatie. Jouw geld & goud 8Hz. Abjad 2871→9→ goud'},9:{name:'Mars',emoji:'♂️',freq:6,base:180,nature:'forest',desc:'Actie, doorzetting, energie om te creëren'}};
 const zodiacData=[{name:'Steenbok',emoji:'♑',element:'Aarde',ruler:'Saturnus',m1:12,d1:22,m2:1,d2:19},{name:'Waterman',emoji:'♒',element:'Lucht',ruler:'Saturnus',m1:1,d1:20,m2:2,d2:18},{name:'Vissen',emoji:'♓',element:'Water',ruler:'Jupiter',m1:2,d1:19,m2:3,d2:20},{name:'Ram',emoji:'♈',element:'Vuur',ruler:'Mars',m1:3,d1:21,m2:4,d2:19},{name:'Stier',emoji:'♉',element:'Aarde',ruler:'Venus',m1:4,d1:20,m2:5,d2:20},{name:'Tweelingen',emoji:'♊',element:'Lucht',ruler:'Mercurius',m1:5,d1:21,m2:6,d2:20},{name:'Kreeft',emoji:'♋',element:'Water',ruler:'Maan',m1:6,d1:21,m2:7,d2:22},{name:'Leeuw',emoji:'♌',element:'Vuur',ruler:'Zon',m1:7,d1:23,m2:8,d2:22},{name:'Maagd',emoji:'♍',element:'Aarde',ruler:'Mercurius',m1:8,d1:23,m2:9,d2:22},{name:'Weegschaal',emoji:'♎',element:'Lucht',ruler:'Venus',m1:9,d1:23,m2:10,d2:22},{name:'Schorpioen',emoji:'♏',element:'Water',ruler:'Mars',m1:10,d1:23,m2:11,d2:21},{name:'Boogschutter',emoji:'♐',element:'Vuur',ruler:'Jupiter',m1:11,d1:22,m2:12,d2:21}];
 const natures={storm:{emoji:'⛈️',name:'Storm'},ocean:{emoji:'🌊',name:'Oceaan'},forest:{emoji:'🌴',name:'Regenwoud'},rain:{emoji:'🌧️',name:'Zacht Regen'},night:{emoji:'🌙',name:'Nacht Bos'},silent:{emoji:'🔇',name:'Stil'}};
@@ -732,16 +737,13 @@ function detectAutoLanguage(){
     // But for global users, use auto detected
     if(autoLang){
       localStorage.setItem('binaural_lang', autoLang);
-      // Set currentLang to auto detected
-      if(typeof currentLang !== 'undefined'){
-        currentLang = autoLang;
-      }
+      // currentLang wordt hieronder geïnitialiseerd vanuit localStorage
     }
   }
 })();
 
 
-let currentLang = localStorage.getItem('binaural_lang') || detectAutoLanguage() || 'nl';
+currentLang = localStorage.getItem('binaural_lang') || (typeof detectAutoLanguage==='function' ? detectAutoLanguage() : null) || 'nl';
 const translations = {
 nl: {
 title:"Binaural × Numerologie × Horoscoop",
@@ -3206,7 +3208,7 @@ function setLanguage(lang){
 let currentIntent=intents[1],baseFreq=240,beatFreq=8,currentNature='ocean',currentPlanet=3,currentHoro='day';
 let audioCtx=null,oscL=null,oscR=null,gainNode=null,pannerL=null,pannerR=null,natureGain=null,natureNodes=[],natureIntervals=[],isPlaying=false,timerId=null,remaining=0,breathInterval=null;
 let motionEnabled=false,lastMove=Date.now(),stillSeconds=0,isSleeping=false,sleepStart=null,motionHistory=[],sleepStages=[],remActive=false;
-const $=s=>document.getElementById(s);
+$=s=>document.getElementById(s); // already declared early
 function pyth(s){const map={A:1,B:2,C:3,D:4,E:5,F:6,G:7,H:8,I:9,J:1,K:2,L:3,M:4,N:5,O:6,P:7,Q:8,R:9,S:1,T:2,U:3,V:4,W:5,X:6,Y:7,Z:8};let sum=0;s.toUpperCase().replace(/[^A-Z]/g,'').split('').forEach(ch=>{sum+=map[ch]||0});return sum;}
 function reduce(n){while(n>9&&![11,22,33].includes(n)){n=String(n).split('').reduce((a,b)=>a+parseInt(b),0);}return n;}
 function getZodiac(m,d){for(let z of zodiacData){if(z.m1===12){if((m===12&&d>=22)||(m===1&&d<=19)) return z;}else if((m===z.m1&&d>=z.d1)||(m===z.m2&&d<=z.d2)||(m>z.m1&&m<z.m2)||(m===z.m1&&d>=z.d1&&m<z.m2)||(m===z.m2&&d<=z.d2&&m>z.m1)){if((m===z.m1&&d>=z.d1)||(m===z.m2&&d<=z.d2)||(m>z.m1&&m<z.m2)) return z;}} return zodiacData[7];}
