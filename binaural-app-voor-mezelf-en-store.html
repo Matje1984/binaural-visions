@@ -422,7 +422,20 @@ Tip: Tik op vraag om antwoord te openen. © 2026 MF Gregoire en zoon — Pentagr
 <script>
 // === EARLY DECLARATIONS (fix TDZ issues) ===
 var currentLang = localStorage.getItem('binaural_lang') || 'nl';
-var $ = function(s){ return document.getElementById(s); };
+var $ = function(s){
+  var el = document.getElementById(s);
+  if(el) return el;
+  // Safe dummy so .textContent/.style/.innerHTML never throw on missing elements
+  return {
+    textContent: '', innerHTML: '', style: {}, classList: {add:function(){},remove:function(){},toggle:function(){},contains:function(){return false}},
+    value: '', checked: false, disabled: false,
+    addEventListener: function(){}, removeEventListener: function(){},
+    focus: function(){}, blur: function(){}, click: function(){},
+    appendChild: function(){}, remove: function(){},
+    getAttribute: function(){return null}, setAttribute: function(){},
+    querySelector: function(){return null}, querySelectorAll: function(){return []}
+  };
+};
 // === END EARLY DECLARATIONS ===
 
 const planetData={1:{name:'Zon',emoji:'☀️',freq:40,base:300,nature:'storm',desc:'Goud, leiderschap, zichtbaar worden. Jouw Matty 73→1 en abjad 3268→1',kleur:'Goud'},2:{name:'Maan',emoji:'🌙',freq:6,base:200,nature:'ocean',desc:'Intuïtie, visioenen, dromen, onderbewustzijn. REM en Theta 6Hz',kleur:'Zilver'},3:{name:'Jupiter',emoji:'♃',freq:10,base:240,nature:'rain',desc:'Rijkdom, expansie, geluk. Geld & goud optie 8Hz werkt met Jupiter',kleur:'Paars'},4:{name:'Uranus',emoji:'♅',freq:7.5,base:190,nature:'forest',desc:'Doorbraak, vernieuwing, plotse inzichten'},5:{name:'Mercurius',emoji:'☿️',freq:7.5,base:200,nature:'forest',desc:'Communicatie, flow, ideeën snel laten stromen'},6:{name:'Venus',emoji:'♀️',freq:10,base:220,nature:'ocean',desc:'Liefde, waarde, wat je aantrekt. Rust 10Hz'},7:{name:'Saturnus',emoji:'♄',freq:7.5,base:200,nature:'night',desc:'Zoeker, mystiek, diepe lessen. Jouw Matje 70→7, mystiek getal'},8:{name:'Saturnus-Jupiter mix',emoji:'♄♃',freq:8,base:240,nature:'ocean',desc:'Geld, karma, manifestatie. Jouw geld & goud 8Hz. Abjad 2871→9→ goud'},9:{name:'Mars',emoji:'♂️',freq:6,base:180,nature:'forest',desc:'Actie, doorzetting, energie om te creëren'}};
@@ -3208,7 +3221,7 @@ function setLanguage(lang){
 let currentIntent=intents[1],baseFreq=240,beatFreq=8,currentNature='ocean',currentPlanet=3,currentHoro='day';
 let audioCtx=null,oscL=null,oscR=null,gainNode=null,pannerL=null,pannerR=null,natureGain=null,natureNodes=[],natureIntervals=[],isPlaying=false,timerId=null,remaining=0,breathInterval=null;
 let motionEnabled=false,lastMove=Date.now(),stillSeconds=0,isSleeping=false,sleepStart=null,motionHistory=[],sleepStages=[],remActive=false;
-$=s=>document.getElementById(s); // already declared early
+$=window.$; // keep safe version
 function pyth(s){const map={A:1,B:2,C:3,D:4,E:5,F:6,G:7,H:8,I:9,J:1,K:2,L:3,M:4,N:5,O:6,P:7,Q:8,R:9,S:1,T:2,U:3,V:4,W:5,X:6,Y:7,Z:8};let sum=0;s.toUpperCase().replace(/[^A-Z]/g,'').split('').forEach(ch=>{sum+=map[ch]||0});return sum;}
 function reduce(n){while(n>9&&![11,22,33].includes(n)){n=String(n).split('').reduce((a,b)=>a+parseInt(b),0);}return n;}
 function getZodiac(m,d){for(let z of zodiacData){if(z.m1===12){if((m===12&&d>=22)||(m===1&&d<=19)) return z;}else if((m===z.m1&&d>=z.d1)||(m===z.m2&&d<=z.d2)||(m>z.m1&&m<z.m2)||(m===z.m1&&d>=z.d1&&m<z.m2)||(m===z.m2&&d<=z.d2&&m>z.m1)){if((m===z.m1&&d>=z.d1)||(m===z.m2&&d<=z.d2)||(m>z.m1&&m<z.m2)) return z;}} return zodiacData[7];}
@@ -3263,6 +3276,7 @@ function setLucidMode(mode){
 }
 function updateLucidBadge(){
  const badge=$('lucidChoiceBadge');
+ if(!badge) return;
  const modes={soft:'Zacht — alleen bel', voice:'Stem — Je droomt 1x', double:'Sterk — 2x Je droomt + trilling', max:'Max — 2x stem + lichtflits'};
  badge.textContent='Keuze: '+(modes[lucidMode]||lucidMode);
 }
